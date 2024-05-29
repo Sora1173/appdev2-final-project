@@ -18,9 +18,10 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'username',
         'email',
         'password',
+        'private_key'
     ];
 
     /**
@@ -31,14 +32,25 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'private_key'
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
+    public function atmospheres() {
+        return $this->belongsToMany(Atmosphere::class, 'atmosphere_users')
+        ->withPivot('joined_at')
+        ->withTimestamps();
+    }
+
+    public function answers() {
+        return $this->hasMany(Answer::class);
+    }
+
+    // /**
+    //  * The attributes that should be cast.
+    //  *
+    //  * @var array<string, string>
+    //  */
+    // protected $casts = [
+    //     'email_verified_at' => 'datetime',
+    // ];
 }
