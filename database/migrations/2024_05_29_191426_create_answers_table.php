@@ -16,7 +16,7 @@ class CreateAnswersTable extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('question_id')->constrained('questions')->onDelete('cascade');
             $table->text('answer_content');
-            $table->integer('rating')->default(0);
+            $table->integer('rating');
             $table->timestamps();
         });
     }
