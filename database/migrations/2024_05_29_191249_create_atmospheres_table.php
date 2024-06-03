@@ -14,6 +14,7 @@ class CreateAtmospheresTable extends Migration
         Schema::create('atmospheres', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->foreignId('creator_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
     }

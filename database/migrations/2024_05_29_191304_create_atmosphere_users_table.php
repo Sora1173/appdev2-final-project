@@ -15,7 +15,7 @@ class CreateAtmosphereUsersTable extends Migration
             $table->id();
             $table->foreignId('atmosphere_id')->constrained('atmospheres')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->timestamp('joined_at')->nullable();
+            $table->timestamp('joined_at');
             $table->timestamps();
         });
     }
