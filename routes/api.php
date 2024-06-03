@@ -5,21 +5,21 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AtmosphereController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
+
+
+Route::post('register', [UserController::class, 'register']);
+Route::post('login', [UserController::class, 'login']);
+Route::post('logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [UserController::class, 'logout']);
-    Route::post('/atmospheres', [AtmosphereController::class, 'create']);
+    Route::get('atmospheres', [AtmosphereController::class, 'index']);
+    Route::post('atmospheres', [AtmosphereController::class, 'store']);
+    Route::get('atmospheres/{atmosphere}', [AtmosphereController::class, 'show']);
+    Route::put('atmospheres/{atmosphere}', [AtmosphereController::class, 'update']);
+    Route::delete('atmospheres/{atmosphere}', [AtmosphereController::class, 'destroy']);
+    Route::post('atmospheres/{atmosphere}/invite', [AtmosphereController::class, 'invite']);
+    Route::post('atmospheres/{atmosphere}/remove/{user}', [AtmosphereController::class, 'removeUser']);
+    Route::post('atmospheres/{atmosphere}/questions', [AtmosphereController::class, 'generateQuestion']);
+    Route::get('atmospheres/{atmosphere}/questions', [AtmosphereController::class, 'getQuestions']);
+    Route::post('atmospheres/{atmosphere}/questions/{question}/answer', [AtmosphereController::class, 'answerQuestion']);
 });
-
-Route::post('/register', [UserController::class, 'register']);
-Route::post('/login', [UserController::class, 'login']);

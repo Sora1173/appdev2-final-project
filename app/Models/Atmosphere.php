@@ -9,16 +9,19 @@ class Atmosphere extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'creator_id'];
 
     public function users() {
         return $this->belongsToMany(User::class, 'atmosphere_users')
-        ->withTimestamps()
-        ->withPivot('joined_at');
+        ->withPivot('joined_at')
+        ->withTimestamps();
     }
 
     public function questions() {
-        return $this->belongsToMany(Question::class, 'atmosphere_questions')
-        ->withTimestamps();
+        return $this->belongsToMany(Question::class)->withTimestamps();
+    }
+
+    public function creator() {
+        return $this->belongsTo(User::class, 'creator_id');
     }
 }

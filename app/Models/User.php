@@ -36,21 +36,14 @@ class User extends Authenticatable
     ];
 
     public function atmospheres() {
-        return $this->belongsToMany(Atmosphere::class, 'atmosphere_users')
-        ->withPivot('joined_at')
-        ->withTimestamps();
+        return $this->belongsToMany(Atmosphere::class, 'atmosphere_users')->withTimestamps();
+    }
+
+    public function createdAtmospheres() {
+        return $this->hasMany(atmosphere::class, 'creator_id');
     }
 
     public function answers() {
         return $this->hasMany(Answer::class);
     }
-
-    // /**
-    //  * The attributes that should be cast.
-    //  *
-    //  * @var array<string, string>
-    //  */
-    // protected $casts = [
-    //     'email_verified_at' => 'datetime',
-    // ];
 }

@@ -11,11 +11,6 @@ class Question extends Model
 
     protected $fillable = ['content'];
 
-    public function atmospheres() {  
-        return $this->belongsToMany(Atmosphere::class, 'atmosphere_questions')
-        ->withTimestamps();
-    }
-
     public function answers() {
         return $this->hasMany(Answer::class);
     }
