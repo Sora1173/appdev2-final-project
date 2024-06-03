@@ -13,8 +13,8 @@ class Atmosphere extends Model
 
     public function users() {
         return $this->belongsToMany(User::class, 'atmosphere_users')
-        ->withPivot('joined_at')
-        ->withTimestamps();
+        ->withTimestamps()
+        ->withPivot('joined_at');
     }
 
     public function questions() {

@@ -18,6 +18,7 @@ use App\Http\Controllers\AtmosphereController;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [UserController::class, 'logout']);
+    Route::post('/atmospheres', [AtmosphereController::class, 'create']);
 });
 
 Route::post('/register', [UserController::class, 'register']);
