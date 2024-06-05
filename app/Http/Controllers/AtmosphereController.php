@@ -90,8 +90,9 @@ class AtmosphereController extends Controller
 
     public function generateQuestion(Request $request, Atmosphere $atmosphere)
     {
-        $pendingQuestion = $atmosphere->questions()->whereDoesntHave('answers', function ($query) use ($atmosphere) {
-            $query->whereIn('user_id', $atmosphere->users->pluck('id'));
+        $pendingQuestion = $atmosphere->questions()
+            ->whereDoesntHave('answers', function ($query) use ($atmosphere) {
+                $query->whereIn('user_id', $atmosphere->users->pluck('id'));
         })->first();
 
         if ($pendingQuestion) {

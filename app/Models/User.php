@@ -31,8 +31,7 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
-        'remember_token',
-        'private_key'
+        'remember_token'
     ];
 
     public function atmospheres() {

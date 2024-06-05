@@ -11,7 +11,7 @@ class CreateAtmosphereQuestionsTable extends Migration
      */
     public function up(): void
     {
-        Schema::create('atmosphere_questions', function (Blueprint $table) {
+        Schema::create('atmosphere_question', function (Blueprint $table) {
             $table->id();
             $table->foreignId('atmosphere_id')->constrained('atmospheres')->onDelete('cascade');
             $table->foreignId('question_id')->constrained('questions')->onDelete('cascade');
@@ -24,6 +24,6 @@ class CreateAtmosphereQuestionsTable extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('atmosphere_questions');
+        Schema::dropIfExists('atmosphere_question');
     }
 };
