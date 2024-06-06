@@ -30,6 +30,13 @@ class AtmosphereController extends Controller
         return response()->json(['atmosphere' => $atmosphere], 201);
     }
 
+    public function getCreatedAtmospheres(Request $request) {
+        $user = $request->user();
+        $createdAtmospheres = $user->createdAtmospheres()->get();
+
+        return response()->json($createdAtmospheres);
+    }
+
     public function show(Atmosphere $atmosphere)
     {
         return response()->json($atmosphere->load('users'));
@@ -90,20 +97,31 @@ class AtmosphereController extends Controller
 
     public function generateQuestion(Request $request, Atmosphere $atmosphere)
     {
-        $pendingQuestion = $atmosphere->questions()
-            ->whereDoesntHave('answers', function ($query) use ($atmosphere) {
-                $query->whereIn('user_id', $atmosphere->users->pluck('id'));
-        })->first();
-
-        if ($pendingQuestion) {
-            return response()->json(['message' => 'All users must answer the current question first'], 403);
+        if (!$atmosphere->users->contains($request->user()->id)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
+        $pendingQuestionForUser = $atmosphere->questions()
+        ->whereHas('answers', function ($query) use ($request) {
+            $query->where('user_id', $request->user()->id);
+        })->doesntExist();
+
+        $allAnswered = $atmosphere->questions()
+        ->whereDoesntHave('answers', function ($query) use ($atmosphere) {
+            $query->whereIn('user_id', $atmosphere->users->pluck('id'));
+        })->doesntExist();
+
+        if (!$allAnswered && !$pendingQuestionForUser) {
+            return response()->json(['message' => 'You cannot generate a new question until all users have answered their current questions'], 403);
+        }
+        
         $question = Question::inRandomOrder()->first();
         $atmosphere->questions()->attach($question->id);
 
         return response()->json(['message' => 'Question generated successfully', 'question' => $question]);
+
     }
+
     public function getQuestions(Atmosphere $atmosphere)
     {
         $questions = $atmosphere->questions()->with('answers')->get();
