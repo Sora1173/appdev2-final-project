@@ -6,6 +6,7 @@ use App\Models\Atmosphere;
 use App\Models\Question;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AtmosphereController extends Controller
@@ -70,6 +71,10 @@ class AtmosphereController extends Controller
 
     public function invite(Request $request, Atmosphere $atmosphere)
     {
+        if ($request->user()->id !== $atmosphere->creator_id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $request->validate([
             'private_key' => 'required|string',
         ]);
@@ -81,7 +86,7 @@ class AtmosphereController extends Controller
         }
 
         if ($atmosphere->users()->count() >= 5) {
-            return response()->json(['message' => 'Atmosphere is full'], 403);
+            return response()->json(['message' => 'Atmosphere is full'], 400);
         }
 
         $atmosphere->users()->attach($user->id, ['joined_at' => now()]);
@@ -91,6 +96,10 @@ class AtmosphereController extends Controller
 
     public function removeUser(Atmosphere $atmosphere, User $user)
     {
+        if (Auth::user()->id !== $atmosphere->creator_id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $atmosphere->users()->detach($user->id);
         return response()->json(['message' => 'User removed from atmosphere']);
     }
