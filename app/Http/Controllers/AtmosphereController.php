@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AnswerQuestionRequest;
+use App\Http\Requests\InviteUserRequest;
+use App\Http\Requests\StoreAtmoshpereRequest;
+use App\Http\Requests\UpdateAtmosphereRequest;
 use App\Models\Atmosphere;
 use App\Models\Question;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AtmosphereController extends Controller
@@ -15,13 +20,11 @@ class AtmosphereController extends Controller
         return response()->json($atmosphere);
     }
     
-    public function store(Request $request) {
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
+    public function store(StoreAtmoshpereRequest $request) {
+        $validated = $request->validated();
 
         $atmosphere = Atmosphere::create([
-            'name' => $request->name,
+            'name' => $validated->name,
             'creator_id' => $request->user()->id,
         ]);
 
@@ -42,17 +45,15 @@ class AtmosphereController extends Controller
         return response()->json($atmosphere->load('users'));
     }
 
-    public function update(Request $request, Atmosphere $atmosphere)
+    public function update(UpdateAtmosphereRequest $request, Atmosphere $atmosphere)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         if ($request->user()->id !== $atmosphere->creator_id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $atmosphere->update(['name' => $request->name]);
+        $atmosphere->update(['name' => $validated->name]);
 
         return response()->json(['atmosphere' => $atmosphere]);
     }
@@ -68,20 +69,22 @@ class AtmosphereController extends Controller
         return response()->json(['message' => 'Atmosphere deleted successfully']);
     }
 
-    public function invite(Request $request, Atmosphere $atmosphere)
+    public function invite(InviteUserRequest $request, Atmosphere $atmosphere)
     {
-        $request->validate([
-            'private_key' => 'required|string',
-        ]);
+        if ($request->user()->id !== $atmosphere->creator_id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
-        $user = User::where('private_key', $request->private_key)->first();
+        $validated = $request->validated();
+
+        $user = User::where('private_key', $validated->private_key)->first();
 
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
 
         if ($atmosphere->users()->count() >= 5) {
-            return response()->json(['message' => 'Atmosphere is full'], 403);
+            return response()->json(['message' => 'Atmosphere is full'], 400);
         }
 
         $atmosphere->users()->attach($user->id, ['joined_at' => now()]);
@@ -91,6 +94,10 @@ class AtmosphereController extends Controller
 
     public function removeUser(Atmosphere $atmosphere, User $user)
     {
+        if (Auth::user()->id !== $atmosphere->creator_id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $atmosphere->users()->detach($user->id);
         return response()->json(['message' => 'User removed from atmosphere']);
     }
@@ -124,19 +131,25 @@ class AtmosphereController extends Controller
 
     public function getQuestions(Atmosphere $atmosphere)
     {
+        if (!$atmosphere->users->contains(Auth::user()->id)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $questions = $atmosphere->questions()->with('answers')->get();
         return response()->json($questions);
     }
 
-    public function answerQuestion(Request $request, Atmosphere $atmosphere, Question $question)
+    public function answerQuestion(AnswerQuestionRequest $request, Atmosphere $atmosphere, Question $question)
     {
-        $request->validate([
-            'answer_content' => 'required|string',
-        ]);
+        if (!$atmosphere->users->contains(Auth::user()->id)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validated();
 
         $answer = $question->answers()->create([
             'user_id' => $request->user()->id,
-            'answer_content' => $request->answer_content,
+            'answer_content' => $validated->answer_content,
             'rating' => 0,
         ]);
 
