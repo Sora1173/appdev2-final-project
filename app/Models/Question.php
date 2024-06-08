@@ -11,6 +11,13 @@ class Question extends Model
 
     protected $fillable = ['content'];
 
+    public function atmospheres()
+    {
+        return $this->belongsToMany(Atmosphere::class)
+                    ->withPivot('created_by')
+                    ->withTimestamps();
+    }
+
     public function answers() {
         return $this->hasMany(Answer::class);
     }

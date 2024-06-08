@@ -15,6 +15,7 @@ class CreateAtmosphereQuestionsTable extends Migration
             $table->id();
             $table->foreignId('atmosphere_id')->constrained('atmospheres')->onDelete('cascade');
             $table->foreignId('question_id')->constrained('questions')->onDelete('cascade');
+            $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
     }

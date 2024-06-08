@@ -10,14 +10,14 @@ class Answer extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'answered_by',
         'question_id',
         'answer_content',
         'rating'
     ];
 
     public function user() {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'answered_by');
     }
 
     public function question() {

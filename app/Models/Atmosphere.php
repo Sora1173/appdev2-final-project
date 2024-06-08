@@ -18,7 +18,9 @@ class Atmosphere extends Model
     }
 
     public function questions() {
-        return $this->belongsToMany(Question::class)->withTimestamps();
+        return $this->belongsToMany(Question::class)
+        ->withPivot('created_by')
+        ->withTimestamps();
     }
 
     public function creator() {

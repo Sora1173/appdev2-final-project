@@ -15,9 +15,9 @@ class UserController extends Controller
         $validated = $request->validated();
 
         $user = User::create([
-            'name' => $validated->name,
-            'email' => $validated->email,
-            'password' => Hash::make($validated->password),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
             'private_key' => bin2hex(random_bytes(16)),
         ]);
 
@@ -27,9 +27,9 @@ class UserController extends Controller
     public function login (LoginUserRequest $request) {
         $validated = $request->validated();
 
-        $user = User::where('email', $validated->email)->first();
+        $user = User::where('email', $validated['email'])->first();
 
-        if(! $user || ! Hash::check($validated->password, $user->password)) {
+        if(! $user || ! Hash::check($validated['password'], $user->password)) {
             throw validationException::withMessages([
                 'email' => ['The provided credentials are incorrect'],
             ]);

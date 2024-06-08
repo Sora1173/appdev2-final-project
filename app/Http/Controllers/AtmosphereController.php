@@ -11,7 +11,7 @@ use App\Models\Question;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+
 
 class AtmosphereController extends Controller
 {
@@ -24,7 +24,7 @@ class AtmosphereController extends Controller
         $validated = $request->validated();
 
         $atmosphere = Atmosphere::create([
-            'name' => $validated->name,
+            'name' => $validated['name'],
             'creator_id' => $request->user()->id,
         ]);
 
@@ -40,26 +40,23 @@ class AtmosphereController extends Controller
         return response()->json($createdAtmospheres);
     }
 
-    public function show(Atmosphere $atmosphere)
-    {
+    public function show(Atmosphere $atmosphere) {
         return response()->json($atmosphere->load('users'));
     }
 
-    public function update(UpdateAtmosphereRequest $request, Atmosphere $atmosphere)
-    {
+    public function update(UpdateAtmosphereRequest $request, Atmosphere $atmosphere) {
         $validated = $request->validated();
 
         if ($request->user()->id !== $atmosphere->creator_id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $atmosphere->update(['name' => $validated->name]);
+        $atmosphere->update(['name' => $validated['name']]);
 
         return response()->json(['atmosphere' => $atmosphere]);
     }
 
-    public function destroy(Request $request, Atmosphere $atmosphere)
-    {
+    public function destroy(Request $request, Atmosphere $atmosphere) {
         if ($request->user()->id !== $atmosphere->creator_id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
@@ -69,15 +66,14 @@ class AtmosphereController extends Controller
         return response()->json(['message' => 'Atmosphere deleted successfully']);
     }
 
-    public function invite(InviteUserRequest $request, Atmosphere $atmosphere)
-    {
+    public function invite(InviteUserRequest $request, Atmosphere $atmosphere) {
         if ($request->user()->id !== $atmosphere->creator_id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $validated = $request->validated();
 
-        $user = User::where('private_key', $validated->private_key)->first();
+        $user = User::where('private_key', $validated['private_key'])->first();
 
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
@@ -92,8 +88,7 @@ class AtmosphereController extends Controller
         return response()->json(['message' => 'User invited successfully']);
     }
 
-    public function removeUser(Atmosphere $atmosphere, User $user)
-    {
+    public function removeUser(Atmosphere $atmosphere, User $user) {
         if (Auth::user()->id !== $atmosphere->creator_id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
@@ -102,36 +97,59 @@ class AtmosphereController extends Controller
         return response()->json(['message' => 'User removed from atmosphere']);
     }
 
-    public function generateQuestion(Request $request, Atmosphere $atmosphere)
-    {
-        if (!$atmosphere->users->contains($request->user()->id)) {
+    public function generateQuestion(Request $request, Atmosphere $atmosphere) {
+        $user = $request->user();
+
+        // Check if the user is part of the atmosphere
+        if (!$atmosphere->users->contains($user->id)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $pendingQuestionForUser = $atmosphere->questions()
-        ->whereHas('answers', function ($query) use ($request) {
-            $query->where('user_id', $request->user()->id);
-        })->doesntExist();
+        // Check if there are any unanswered questions in the atmosphere
+        $unansweredQuestions = $atmosphere->questions()
+            ->whereDoesntHave('answers', function ($query) use ($atmosphere) {
+                $query->whereIn('answered_by', $atmosphere->users->pluck('id'));
+            })->exists();
 
-        $allAnswered = $atmosphere->questions()
-        ->whereDoesntHave('answers', function ($query) use ($atmosphere) {
-            $query->whereIn('user_id', $atmosphere->users->pluck('id'));
-        })->doesntExist();
-
-        if (!$allAnswered && !$pendingQuestionForUser) {
-            return response()->json(['message' => 'You cannot generate a new question until all users have answered their current questions'], 403);
+        if ($unansweredQuestions) {
+            return response()->json(['message' => 'You cannot generate a new question until all existing questions have been answered by all users'], 403);
         }
-        
+
+        // Check if it is the user's turn to generate a question
+        $lastQuestion = $atmosphere->questions()->latest('pivot_created_at')->first();
+        $lastUserId = $lastQuestion ? $lastQuestion->pivot->created_by : null;
+        $nextUserId = $this->getNextUserId($atmosphere, $lastUserId);
+
+        if ($nextUserId !== $user->id) {
+            return response()->json(['message' => 'It is not your turn to generate a question'], 403);
+        }
+
+        // Select a random question
         $question = Question::inRandomOrder()->first();
-        $atmosphere->questions()->attach($question->id);
+        $atmosphere->questions()->attach($question->id, ['created_by' => $user->id]);
 
         return response()->json(['message' => 'Question generated successfully', 'question' => $question]);
-
     }
 
-    public function getQuestions(Atmosphere $atmosphere)
+    private function getNextUserId(Atmosphere $atmosphere, $lastUserId) {
+        $users = $atmosphere->users->pluck('id')->toArray();
+        if (is_null($lastUserId)) {
+            return $users[0];
+        }
+
+        $currentIndex = array_search($lastUserId, $users);
+        $nextIndex = ($currentIndex + 1) % count($users);
+
+        return $users[$nextIndex];
+    }
+
+    public function getQuestions(Request $request, Atmosphere $atmosphere)
     {
-        if (!$atmosphere->users->contains(Auth::user()->id)) {
+
+        $user = $request->user();
+
+        // Check if the user is part of the atmosphere
+        if (!$atmosphere->users->contains($user->id)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -148,8 +166,8 @@ class AtmosphereController extends Controller
         $validated = $request->validated();
 
         $answer = $question->answers()->create([
-            'user_id' => $request->user()->id,
-            'answer_content' => $validated->answer_content,
+            'answered_by' => $request->user()->id,
+            'answer_content' => $validated['answer_content'],
             'rating' => 0,
         ]);
 
