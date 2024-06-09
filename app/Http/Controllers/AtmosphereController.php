@@ -159,8 +159,15 @@ class AtmosphereController extends Controller
 
     public function answerQuestion(AnswerQuestionRequest $request, Atmosphere $atmosphere, Question $question)
     {
-        if (!$atmosphere->users->contains(Auth::user()->id)) {
+        $user = $request->user();
+
+        if (!$atmosphere->users->contains($user->id)) {
             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $createdByUser = $atmosphere->questions()->where('question_id', $question->id)->wherePivot('created_by', $user->id)->exists();
+        if (!$createdByUser) {
+            return response()->json(['message' => 'You can only answer questions you generated'], 403);
         }
 
         $validated = $request->validated();
