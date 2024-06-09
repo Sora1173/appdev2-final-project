@@ -79,6 +79,10 @@ class AtmosphereController extends Controller
             return response()->json(['message' => 'User not found'], 404);
         }
 
+        if ($atmosphere->users->contains($user->id)) {
+            return response()->json(['message' => 'User already in atmosphere'], 400);
+        }
+
         if ($atmosphere->users()->count() >= 5) {
             return response()->json(['message' => 'Atmosphere is full'], 400);
         }
@@ -179,5 +183,14 @@ class AtmosphereController extends Controller
         ]);
 
         return response()->json(['message' => 'Question answered successfully', 'answer' => $answer]);
+    }
+
+    public function getJoinedAtmospheres(Request $request)
+    {
+        $user = $request->user();
+
+        $joinedAtmospheres = $user->atmospheres()->get();
+
+        return response()->json($joinedAtmospheres);
     }
 }

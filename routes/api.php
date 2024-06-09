@@ -23,4 +23,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('atmospheres/{atmosphere}/questions', [AtmosphereController::class, 'getQuestions']);
     Route::post('atmospheres/{atmosphere}/questions/{question}/answer', [AtmosphereController::class, 'answerQuestion']);
     Route::get('user/created-atmospheres', [AtmosphereController::class, 'getCreatedAtmospheres']);
+    Route::get('user/joined-atmospheres', [AtmosphereController::class, 'getJoinedAtmospheres']);
 });
